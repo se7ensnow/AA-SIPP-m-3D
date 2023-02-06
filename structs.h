@@ -22,14 +22,16 @@ struct Agent
     std::string id;
     int start_i;
     int start_j;
+    int start_k;
     double start_heading;
     int goal_i;
     int goal_j;
+    int goal_k;
     double goal_heading;
     double size;
     double rspeed;
     double mspeed;
-    Agent(){ start_i = -1; start_j = -1; goal_i = -1; goal_j = -1;
+    Agent(){ start_i = -1; start_j = -1; start_k = -1; goal_i = -1; goal_j = -1; goal_k = -1;
              size = CN_DEFAULT_SIZE; mspeed = CN_DEFAULT_MSPEED; rspeed = CN_DEFAULT_RSPEED;
              start_heading = CN_DEFAULT_SHEADING; goal_heading = CN_DEFAULT_GHEADING; }
 };
@@ -59,9 +61,9 @@ struct SafeInterval
 
 struct Node
 {
-    Node(int _i=-1, int _j=-1, double _g=-1, double _F=-1):i(_i),j(_j),g(_g),F(_F),Parent(nullptr){}
+    Node(int _i=-1, int _j=-1, int _k=-1, double _g=-1, double _F=-1):i(_i),j(_j),k(_k),g(_g),F(_F),Parent(nullptr){}
     ~Node(){ Parent = nullptr; }
-    int     i, j;
+    int     i, j, k;
     double  size;
     double  g;
     double  F;
@@ -94,6 +96,12 @@ struct section
     double mspeed;
     bool operator == (const section &comp) const {return (i1 == comp.i1 && j1 == comp.j1 && g1 == comp.g1);}
 
+};
+
+struct cell {
+    int i;
+    int j;
+    int k;
 };
 
 class Vector2D {

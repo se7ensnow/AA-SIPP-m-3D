@@ -51,23 +51,23 @@ void Constraints::resetSafeIntervals(int width, int height)
     }
 }
 
-void Constraints::updateCellSafeIntervals(std::pair<int, int> cell)
+void Constraints::updateCellSafeIntervals(cell cur_cell)
 {
-    if(safe_intervals[cell.first][cell.second].size() > 1)
+    if(safe_intervals[cur_cell.i][cur_cell.j].size() > 1)
         return;
     LineOfSight los(agentsize);
-    std::vector<std::pair<int, int>> cells = los.getCells(cell.first, cell.second);
+    std::vector<cell> cells = los.getCells(cur_cell.i, cur_cell.j, cur_cell.k);
     std::vector<section> secs;
     for(int k = 0; k < cells.size(); k++)
-        for(int l = 0; l < constraints[cells[k].first][cells[k].second].size(); l++)
-            if(std::find(secs.begin(), secs.end(), constraints[cells[k].first][cells[k].second][l]) == secs.end())
-                secs.push_back(constraints[cells[k].first][cells[k].second][l]);
+        for(int l = 0; l < constraints[cells[k].i][cells[k].j].size(); l++)
+            if(std::find(secs.begin(), secs.end(), constraints[cells[k].i][cells[k].j][l]) == secs.end())
+                secs.push_back(constraints[cells[k].i][cells[k].j][l]);
 
     for(int k = 0; k < secs.size(); k++)
     {
         section sec = secs[k];
         double radius = agentsize + sec.size;
-        int i0(secs[k].i1), j0(secs[k].j1), i1(secs[k].i2), j1(secs[k].j2), i2(cell.first), j2(cell.second);
+        int i0(secs[k].i1), j0(secs[k].j1), i1(secs[k].i2), j1(secs[k].j2), i2(cur_cell.i), j2(cur_cell.j);
         SafeInterval interval;
         double dist, mindist;
         if(i0 == i1 && j0 == j1 && i0 == i2 && j0 == j2)
@@ -197,22 +197,22 @@ std::vector<SafeInterval> Constraints::getSafeIntervals(Node curNode)
     return safe_intervals[curNode.i][curNode.j];
 }
 
-void Constraints::addStartConstraint(int i, int j, int size, std::vector<std::pair<int, int> > cells, double agentsize)
+void Constraints::addStartConstraint(int i, int j, int size, std::vector<cell> cells, double agentsize)
 {
     section sec(i, j, i, j, 0, size);
     sec.size = agentsize;
     for(auto cell: cells)
-        constraints[cell.first][cell.second].insert(constraints[cell.first][cell.second].begin(),sec);
+        constraints[cell.i][cell.j].insert(constraints[cell.i][cell.j].begin(),sec);
     return;
 }
 
-void Constraints::removeStartConstraint(std::vector<std::pair<int, int> > cells, int start_i, int start_j)
+void Constraints::removeStartConstraint(std::vector<cell> cells, int start_i, int start_j)
 {
     for(auto cell: cells)
-        for(size_t k = 0; k < constraints[cell.first][cell.second].size(); k++)
-            if(constraints[cell.first][cell.second][k].i1 == start_i && constraints[cell.first][cell.second][k].j1 == start_j && constraints[cell.first][cell.second][k].g1 < CN_EPSILON)
+        for(size_t k = 0; k < constraints[cell.i][cell.j].size(); k++)
+            if(constraints[cell.i][cell.j][k].i1 == start_i && constraints[cell.i][cell.j][k].j1 == start_j && constraints[cell.i][cell.j][k].g1 < CN_EPSILON)
             {
-                constraints[cell.first][cell.second].erase(constraints[cell.first][cell.second].begin() + k);
+                constraints[cell.i][cell.j].erase(constraints[cell.i][cell.j].begin() + k);
                 k--;
             }
     return;
@@ -220,26 +220,26 @@ void Constraints::removeStartConstraint(std::vector<std::pair<int, int> > cells,
 
 void Constraints::addConstraints(const std::vector<Node> &sections, double size, double mspeed, const Map &map)
 {
-    std::vector<std::pair<int,int>> cells;
+    std::vector<cell> cells;
     LineOfSight los(size);
     section sec(sections.back(), sections.back());
     sec.g2 = CN_INFINITY;
     sec.size = size;
     sec.mspeed = mspeed;
-    cells = los.getCellsCrossedByLine(sec.i1, sec.j1, sec.i2, sec.j2, map);
+    cells = los.getCellsCrossedByLine(sec.i1, sec.j1, 0, sec.i2, sec.j2, 0, map); //заглушка
     for(auto cell: cells)
-        constraints[cell.first][cell.second].push_back(sec);
+        constraints[cell.i][cell.j].push_back(sec);
     if(sec.g1 == 0)
         for(auto cell: cells)
-            safe_intervals[cell.first][cell.second].clear();
+            safe_intervals[cell.i][cell.j].clear();
     for(unsigned int a = 1; a < sections.size(); a++)
     {
-        cells = los.getCellsCrossedByLine(sections[a-1].i, sections[a-1].j, sections[a].i, sections[a].j, map);
+        cells = los.getCellsCrossedByLine(sections[a-1].i, sections[a-1].j, 0, sections[a].i, sections[a].j, 0, map); //заглушка
         sec = section(sections[a-1], sections[a]);
         sec.size = size;
         sec.mspeed = mspeed;
         for(unsigned int i = 0; i < cells.size(); i++)
-            constraints[cells[i].first][cells[i].second].push_back(sec);
+            constraints[cells[i].i][cells[i].j].push_back(sec);
         /*if(a+1 == sections.size())
             updateSafeIntervals(cells,sec,true);
         else
@@ -254,13 +254,13 @@ std::vector<SafeInterval> Constraints::findIntervals(Node curNode, std::vector<d
         return curNodeIntervals;
     EAT.clear();
     LineOfSight los(agentsize);
-    std::vector<std::pair<int,int>> cells = los.getCellsCrossedByLine(curNode.i, curNode.j, curNode.Parent->i, curNode.Parent->j, map);
+    std::vector<cell> cells = los.getCellsCrossedByLine(curNode.i, curNode.j, 0, curNode.Parent->i, curNode.Parent->j, 0, map);
     std::vector<section> sections(0);
     section sec;
     for(unsigned int i = 0; i < cells.size(); i++)
-        for(unsigned int j = 0; j < constraints[cells[i].first][cells[i].second].size(); j++)
+        for(unsigned int j = 0; j < constraints[cells[i].i][cells[i].j].size(); j++)
         {
-            sec = constraints[cells[i].first][cells[i].second][j];
+            sec = constraints[cells[i].i][cells[i].j][j];
             if(sec.g2 < curNode.Parent->g || sec.g1 > (curNode.Parent->interval.end + curNode.g - curNode.Parent->g))
                 continue;
             if(std::find(sections.begin(), sections.end(), sec) == sections.end())

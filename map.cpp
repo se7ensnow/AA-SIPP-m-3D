@@ -5,6 +5,7 @@ Map::Map()
 {
     height = 0;
     width = 0;
+    length = 0;
 }
 Map::~Map()
 {	
@@ -53,116 +54,138 @@ bool Map::getMap(const char* FileName)
         std::cout<<"Wrong value of "<<CNS_TAG_ATTR_WIDTH<<" attribute. It should be >0.\n";
         return false;
     }
-    XMLElement *row = grid->FirstChildElement(CNS_TAG_ROW);
+    length = grid->IntAttribute(CNS_TAG_ATTR_LENGTH);
+    if (length <= 0) {
+        std::cout<<"Wrong value of "<<CNS_TAG_ATTR_LENGTH<<" attribute. It should be >0.\n";
+        return false;
+    }
+    XMLElement *plane = grid->FirstChildElement(CNS_TAG_PLANE);
+    XMLElement *row = nullptr;
     Grid.resize(height);
-    for(int i = 0; i < height; i++)
-        Grid[i].resize(width, 0);
+    for(int i = 0; i < length; i++) {
+        Grid[i].resize(height);
+        for (int j = 0; j < height; j++) {
+            Grid[i][j].resize(width, 0);
+        }
+    }
 
     std::string value;
     const char* rowtext;
     std::stringstream stream;
-    for(int i = 0; i < height; i++)
+    for(int p = 0; p < length; p++)
     {
-        if (!row)
+        if (!plane)
         {
-            std::cout << "Not enough '" << CNS_TAG_ROW << "' in '" << CNS_TAG_GRID << "' given." << std::endl;
+            std::cout << "Not enough '" << CNS_TAG_PLANE << "' in '" << CNS_TAG_GRID << "' given." << std::endl;
             return false;
         }
-
-        rowtext = row->GetText();
-        unsigned int k = 0;
-        value = "";
-        int j = 0;
-
-        for(k = 0; k < strlen(rowtext); k++)
-        {
-            if (rowtext[k] == ' ')
+        row = plane->FirstChildElement(CNS_TAG_ROW);
+        for (int r = 0; r < height; r++) {
+            if (!row)
             {
-                stream << value;
-                stream >> Grid[i][j];
-                stream.clear();
-                stream.str("");
-                value = "";
-                j++;
+                std::cout << "Not enough '" << CNS_TAG_ROW << "' in '" << CNS_TAG_PLANE << "' " << p << " given." << std::endl;
+                return false;
             }
-            else
-            {
-                value += rowtext[k];
-            }
-        }
-        stream << value;
-        stream >> Grid[i][j];
-        stream.clear();
-        stream.str("");
+            rowtext = row->GetText();
+            unsigned int k = 0;
+            value = "";
+            int c = 0;
 
-        if (j < width-1)
-        {
-            std::cout << "Not enough cells in '" << CNS_TAG_ROW << "' " << i << " given." << std::endl;
-            return false;
+            for (k = 0; k < strlen(rowtext); k++) {
+                if (rowtext[k] == ' ') {
+                    stream << value;
+                    stream >> Grid[p][r][c];
+                    stream.clear();
+                    stream.str("");
+                    value = "";
+                    c++;
+                } else {
+                    value += rowtext[k];
+                }
+            }
+            stream << value;
+            stream >> Grid[p][r][c];
+            stream.clear();
+            stream.str("");
+
+            if (c < width - 1) {
+                std::cout << "Not enough cells in '" << CNS_TAG_ROW << "' " << r << " given." << std::endl;
+                return false;
+            }
+            row = row->NextSiblingElement(CNS_TAG_ROW);
         }
-        row = row->NextSiblingElement(CNS_TAG_ROW);
+        plane = plane->NextSiblingElement(CNS_TAG_PLANE);
     }
     return true;
 }
 
 
-bool Map::CellIsTraversable(int i, int j) const
+bool Map::CellIsTraversable(int i, int j, int k) const
 {
-    return (Grid[i][j] == 0);
+    return (Grid[i][j][k] == 0);
 }
 
-bool Map::CellIsObstacle(int i, int j) const
+bool Map::CellIsObstacle(int i, int j, int k) const
 {
-    return (Grid[i][j] != 0);
+    return (Grid[i][j][k] != 0);
 }
 
-bool Map::CellOnGrid(int i, int j) const
+bool Map::CellOnGrid(int i, int j, int k) const
 {
-    return (i < height && i >= 0 && j < width && j >= 0);
+    return (i < length && i >= 0 && j < height && j >= 0 && k < width && k >= 0);
 }
 
-int Map::getValue(int i, int j) const
+int Map::getValue(int i, int j, int k) const
 {
-    if(i < 0 || i >= height)
+    if(i < 0 || i >= length)
         return -1;
-    if(j < 0 || j >= width)
+    if(j < 0 || j >= height)
+        return -1;
+    if(k < 0 || k >= width)
         return -1;
 
-    return Grid[i][j];
+    return Grid[i][j][k];
 }
 
-std::vector<Node> Map::getValidMoves(int i, int j, int k, double size) const
+std::vector<Node> Map::getValidMoves(int i, int j, int k, int neig_num, double size) const
 {
    LineOfSight los;
    los.setSize(size);
    std::vector<Node> moves;
-   if(k == 2)
-       moves = {Node(0,1,1.0),   Node(1,0,1.0),         Node(-1,0,1.0), Node(0,-1,1.0)};
-   else if(k == 3)
-       moves = {Node(0,1,1.0),   Node(1,1,sqrt(2.0)),   Node(1,0,1.0),  Node(1,-1,sqrt(2.0)),
-                Node(0,-1,1.0),  Node(-1,-1,sqrt(2.0)), Node(-1,0,1.0), Node(-1,1,sqrt(2.0))};
-   else if(k == 4)
-       moves = {Node(0,1,1.0),          Node(1,1,sqrt(2.0)),    Node(1,0,1.0),          Node(1,-1,sqrt(2.0)),
-                Node(0,-1,1.0),         Node(-1,-1,sqrt(2.0)),  Node(-1,0,1.0),         Node(-1,1,sqrt(2.0)),
-                Node(1,2,sqrt(5.0)),    Node(2,1,sqrt(5.0)),    Node(2,-1,sqrt(5.0)),   Node(1,-2,sqrt(5.0)),
-                Node(-1,-2,sqrt(5.0)),  Node(-2,-1,sqrt(5.0)),  Node(-2,1,sqrt(5.0)),   Node(-1,2,sqrt(5.0))};
-   else
-       moves = {Node(0,1,1.0),          Node(1,1,sqrt(2.0)),    Node(1,0,1.0),          Node(1,-1,sqrt(2.0)),
-                Node(0,-1,1.0),         Node(-1,-1,sqrt(2.0)),  Node(-1,0,1.0),         Node(-1,1,sqrt(2.0)),
-                Node(1,2,sqrt(5.0)),    Node(2,1,sqrt(5.0)),    Node(2,-1,sqrt(5.0)),   Node(1,-2,sqrt(5.0)),
-                Node(-1,-2,sqrt(5.0)),  Node(-2,-1,sqrt(5.0)),  Node(-2,1,sqrt(5.0)),   Node(-1,2,sqrt(5.0)),
-                Node(1,3,sqrt(10.0)),   Node(2,3,sqrt(13.0)),   Node(3,2,sqrt(13.0)),   Node(3,1,sqrt(10.0)),
-                Node(3,-1,sqrt(10.0)),  Node(3,-2,sqrt(13.0)),  Node(2,-3,sqrt(13.0)),  Node(1,-3,sqrt(10.0)),
-                Node(-1,-3,sqrt(10.0)), Node(-2,-3,sqrt(13.0)), Node(-3,-2,sqrt(13.0)), Node(-3,-1,sqrt(10.0)),
-                Node(-3,1,sqrt(10.0)),  Node(-3,2,sqrt(13.0)),  Node(-2,3,sqrt(13.0)),  Node(-1,3,sqrt(10.0))};
+   if(neig_num == 2)
+       moves = {Node(0,0,1,1.0), Node(0,1,0,1.0), Node(0,-1,0,1.0), Node(0,0,-1,1.0), Node(1,0,0,1.0), Node(-1,0,0,1.0)};
+   else if(neig_num == 3)
+       moves = {Node(0,0,1,1.0),          Node(0,1,1,sqrt(2.0)),    Node(0,1,0,1.0),         Node(0,1,-1,sqrt(2.0)),
+                Node(0,0,-1,1.0),         Node(0,-1,-1,sqrt(2.0)),  Node(0,-1,0,1.0),        Node(0,-1,1,sqrt(2.0)),
+                Node(1,0,0,1.0),
+                Node(1,0,1,sqrt(2.0)),    Node(1,1,1,sqrt(3.0)),    Node(1,1,0,sqrt(2.0)),   Node(1,1,-1,sqrt(3.0)),
+                Node(1,0,-1,sqrt(2.0)),   Node(1,-1,-1,sqrt(3.0)),  Node(1,-1,0,sqrt(2.0)),  Node(1,-1,1,sqrt(3.0)),
+                Node(-1,0,0,1.0),
+                Node(-1,0,1,sqrt(2.0)),   Node(-1,1,1,sqrt(3.0)),   Node(-1,1,0,sqrt(2.0)),  Node(-1,1,-1,sqrt(3.0)),
+                Node(-1,0,-1,sqrt(2.0)),  Node(-1,-1,-1,sqrt(3.0)), Node(-1,-1,0,sqrt(2.0)), Node(-1,-1,1,sqrt(3.0))};
+   // else if(neig_num == 4)
+   //     moves = {Node(0,1,1.0),          Node(1,1,sqrt(2.0)),    Node(1,0,1.0),          Node(1,-1,sqrt(2.0)),
+   //              Node(0,-1,1.0),         Node(-1,-1,sqrt(2.0)),  Node(-1,0,1.0),         Node(-1,1,sqrt(2.0)),
+   //              Node(1,2,sqrt(5.0)),    Node(2,1,sqrt(5.0)),    Node(2,-1,sqrt(5.0)),   Node(1,-2,sqrt(5.0)),
+   //              Node(-1,-2,sqrt(5.0)),  Node(-2,-1,sqrt(5.0)),  Node(-2,1,sqrt(5.0)),   Node(-1,2,sqrt(5.0))};
+   // else
+   //     moves = {Node(0,1,1.0),          Node(1,1,sqrt(2.0)),    Node(1,0,1.0),          Node(1,-1,sqrt(2.0)),
+   //              Node(0,-1,1.0),         Node(-1,-1,sqrt(2.0)),  Node(-1,0,1.0),         Node(-1,1,sqrt(2.0)),
+   //              Node(1,2,sqrt(5.0)),    Node(2,1,sqrt(5.0)),    Node(2,-1,sqrt(5.0)),   Node(1,-2,sqrt(5.0)),
+   //              Node(-1,-2,sqrt(5.0)),  Node(-2,-1,sqrt(5.0)),  Node(-2,1,sqrt(5.0)),   Node(-1,2,sqrt(5.0)),
+   //              Node(1,3,sqrt(10.0)),   Node(2,3,sqrt(13.0)),   Node(3,2,sqrt(13.0)),   Node(3,1,sqrt(10.0)),
+   //              Node(3,-1,sqrt(10.0)),  Node(3,-2,sqrt(13.0)),  Node(2,-3,sqrt(13.0)),  Node(1,-3,sqrt(10.0)),
+   //              Node(-1,-3,sqrt(10.0)), Node(-2,-3,sqrt(13.0)), Node(-3,-2,sqrt(13.0)), Node(-3,-1,sqrt(10.0)),
+   //              Node(-3,1,sqrt(10.0)),  Node(-3,2,sqrt(13.0)),  Node(-2,3,sqrt(13.0)),  Node(-1,3,sqrt(10.0))};
    std::vector<bool> valid(moves.size(), true);
-   for(int k = 0; k < moves.size(); k++)
-       if(!CellOnGrid(i + moves[k].i, j + moves[k].j) || CellIsObstacle(i + moves[k].i, j + moves[k].j)
-               || !los.checkLine(i, j, i + moves[k].i, j + moves[k].j, *this))
-           valid[k] = false;
+   for(int num = 0; num < moves.size(); k++)
+       if(!CellOnGrid(i + moves[num].i, j + moves[num].j, k + moves[num].k)
+       || CellIsObstacle(i + moves[num].i, j + moves[num].j, k + moves[num].k)
+       || !los.checkLine(i, j, k, i + moves[num].i, j + moves[num].j, k + moves[num].k, *this))
+           valid[neig_num] = false;
    std::vector<Node> v_moves = {};
-   for(int k = 0; k < valid.size(); k++)
-       if(valid[k])
-           v_moves.push_back(moves[k]);
+   for(int num = 0; num < valid.size(); k++)
+       if(valid[num])
+           v_moves.push_back(moves[num]);
    return v_moves;
 }

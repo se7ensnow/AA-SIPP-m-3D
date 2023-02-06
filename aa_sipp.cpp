@@ -74,13 +74,14 @@ std::list<Node> AA_SIPP::findSuccessors(const Node curNode, const Map &map)
     std::vector<SafeInterval> intervals;
     double h_value;
     auto parent = &(close.find(curNode.i*map.width + curNode.j)->second);
-    std::vector<Node> moves = map.getValidMoves(curNode.i, curNode.j, config->connectedness, curagent.size);
-    for(auto m:moves)
-        if(lineofsight.checkTraversability(curNode.i + m.i,curNode.j + m.j,map))
+    std::vector<Node> moves = map.getValidMoves(curNode.i, curNode.j, curNode.k, config->connectedness, curagent.size);
+    for(auto& m:moves)
+        if(lineofsight.checkTraversability(curNode.i + m.i, curNode.j + m.j, curNode.k + m.k, map))
         {
             newNode.i = curNode.i + m.i;
             newNode.j = curNode.j + m.j;
-            constraints->updateCellSafeIntervals({newNode.i,newNode.j});
+            newNode.k = curNode.k + m.k;
+            constraints->updateCellSafeIntervals({newNode.i,newNode.j, newNode.k});
             newNode.heading = calcHeading(curNode, newNode);
             angleNode = curNode; //the same state, but with extended g-value
             angleNode.g += getRCost(angleNode.heading, newNode.heading) + config->additionalwait;//to compensate the amount of time required for rotation
@@ -337,7 +338,7 @@ SearchResult AA_SIPP::startSearch(Map &map, Task &task, DynamicObstacles &obstac
             lineofsight.setSize(curagent.size);
             if(config->startsafeinterval > 0)
             {
-                auto cells = lineofsight.getCells(curagent.start_i,curagent.start_j);
+                auto cells = lineofsight.getCells(curagent.start_i,curagent.start_j,curagent.start_k);
                 constraints->addStartConstraint(curagent.start_i, curagent.start_j, config->startsafeinterval, cells, curagent.size);
             }
         }
@@ -348,7 +349,7 @@ SearchResult AA_SIPP::startSearch(Map &map, Task &task, DynamicObstacles &obstac
             lineofsight.setSize(curagent.size);
             if(config->startsafeinterval > 0)
             {
-                auto cells = lineofsight.getCells(curagent.start_i, curagent.start_j);
+                auto cells = lineofsight.getCells(curagent.start_i, curagent.start_j, curagent.start_k);
                 constraints->removeStartConstraint(cells, curagent.start_i, curagent.start_j);
             }
             if(findPath(current_priorities[numOfCurAgent], map))
@@ -398,7 +399,7 @@ Node AA_SIPP::resetParent(Node current, Node Parent, const Map &map)
 {
     if(Parent.Parent == nullptr || (current.i == Parent.Parent->i && current.j == Parent.Parent->j))
         return current;
-    if(lineofsight.checkLine(Parent.Parent->i, Parent.Parent->j, current.i, current.j, map))
+    if(lineofsight.checkLine(Parent.Parent->i, Parent.Parent->j, Parent.Parent->k, current.i, current.j, current.k, map))
     {
         current.g = Parent.Parent->g + getCost(Parent.Parent->i, Parent.Parent->j, current.i, current.j)/curagent.mspeed;
         current.Parent = Parent.Parent;

@@ -57,18 +57,20 @@ bool DynamicObstacles::getObstacles(const char *fileName)
             {
                 node.i = sec->IntAttribute(CNS_TAG_ATTR_SY);
                 node.j = sec->IntAttribute(CNS_TAG_ATTR_SX);
+                node.k = sec->IntAttribute(CNS_TAG_ATTR_SZ);
                 node.g = 0;
                 obs.sections.push_back(node);
             }
             node.i = sec->IntAttribute(CNS_TAG_ATTR_GY);
             node.j = sec->IntAttribute(CNS_TAG_ATTR_GX);
+            node.k = sec->IntAttribute(CNS_TAG_ATTR_GZ);
             node.g += sec->DoubleAttribute(CNS_TAG_ATTR_DURATION);
             obs.sections.push_back(node);
         }
         for(size_t i = 1; i < obs.sections.size(); i++)
-            if(obs.sections[i-1].i != obs.sections[i].i || obs.sections[i-1].j != obs.sections[i].j)
+            if(obs.sections[i-1].i != obs.sections[i].i || obs.sections[i-1].j != obs.sections[i].j || obs.sections[i-1].k != obs.sections[i].k)
             {
-                double dist = sqrt(pow(obs.sections[i-1].i - obs.sections[i].i, 2) + pow(obs.sections[i-1].j - obs.sections[i].j, 2));
+                double dist = sqrt(pow(obs.sections[i-1].i - obs.sections[i].i, 2) + pow(obs.sections[i-1].j - obs.sections[i].j, 2) + pow(obs.sections[i-1].k - obs.sections[i].k, 2));
                 obs.mspeed = dist/(obs.sections[i].g - obs.sections[i-1].g);
                 break;
             }

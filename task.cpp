@@ -72,8 +72,10 @@ bool Task::getTask(const char *fileName)
         Agent agent;
         agent.start_i = element->IntAttribute(CNS_TAG_ATTR_SY);
         agent.start_j = element->IntAttribute(CNS_TAG_ATTR_SX);
+        agent.start_k = element->IntAttribute(CNS_TAG_ATTR_SZ);
         agent.goal_i = element->IntAttribute(CNS_TAG_ATTR_GY);
         agent.goal_j = element->IntAttribute(CNS_TAG_ATTR_GX);
+        agent.goal_k = element->IntAttribute(CNS_TAG_ATTR_GZ);
 
         if(element->Attribute(CNS_TAG_ATTR_ID))
             agent.id = element->Attribute(CNS_TAG_ATTR_ID);
@@ -133,15 +135,15 @@ bool Task::getTask(const char *fileName)
 bool Task::validateTask(const Map &map)
 {
     LineOfSight los;
-    for(Agent a:agents)
+    for(Agent& a:agents)
     {
         los.setSize(a.size);
-        if(!los.checkTraversability(a.start_i, a.start_j, map))
+        if(!los.checkTraversability(a.start_i, a.start_j, a.start_k, map))
         {
             std::cout<<"Error! Start position of agent "<<a.id<<" is invalid.\n";
             return false;
         }
-        if(!los.checkTraversability(a.goal_i, a.goal_j, map))
+        if(!los.checkTraversability(a.goal_i, a.goal_j, a.goal_k, map))
         {
             std::cout<<"Error! Goal position of agent "<<a.id<<" is invalid.\n";
             return false;
@@ -151,12 +153,12 @@ bool Task::validateTask(const Map &map)
         for(int j = i + 1; j < agents.size(); j++)
         {
             Agent a1 = agents[i], a2 = agents[j];
-            if(sqrt(pow(a1.start_i - a2.start_i, 2) + pow(a1.start_j - a2.start_j, 2)) < (a1.size + a2.size))
+            if(sqrt(pow(a1.start_i - a2.start_i, 2) + pow(a1.start_j - a2.start_j, 2) + pow(a1.start_k - a2.start_k, 2)) < (a1.size + a2.size))
             {
                 std::cout<<"Error! Start positions of agents "<< a1.id <<" and "<< a2.id <<" are placed too close.\n";
                 return false;
             }
-            if(sqrt(pow(a1.goal_i - a2.goal_i, 2) + pow(a1.goal_j - a2.goal_j, 2)) < (a1.size + a2.size))
+            if(sqrt(pow(a1.goal_i - a2.goal_i, 2) + pow(a1.goal_j - a2.goal_j, 2) + pow(a1.goal_k - a2.goal_k, 2)) < (a1.size + a2.size))
             {
                 std::cout<<"Error! Goal positions of agents "<< a1.id <<" and "<< a2.id <<" are placed too close.\n";
                 return false;

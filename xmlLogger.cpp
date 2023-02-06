@@ -202,7 +202,7 @@ void XmlLogger::writeToLogMap(const Map &map, const SearchResult &sresult)
 
         for(int j = 0; j < map.width; j++)
             if(curLine[j] != 1)
-                text += std::to_string(map.Grid[i][j]) + " ";
+                text += std::to_string(map.Grid[i][j][0]) + " "; // заглушка
             else
             {
                 text += "* ";
