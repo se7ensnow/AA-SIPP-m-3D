@@ -61,7 +61,7 @@ bool Map::getMap(const char* FileName)
     }
     XMLElement *plane = grid->FirstChildElement(CNS_TAG_PLANE);
     XMLElement *row = nullptr;
-    Grid.resize(height);
+    Grid.resize(length);
     for(int i = 0; i < length; i++) {
         Grid[i].resize(height);
         for (int j = 0; j < height; j++) {
@@ -178,13 +178,13 @@ std::vector<Node> Map::getValidMoves(int i, int j, int k, int neig_num, double s
    //              Node(-1,-3,sqrt(10.0)), Node(-2,-3,sqrt(13.0)), Node(-3,-2,sqrt(13.0)), Node(-3,-1,sqrt(10.0)),
    //              Node(-3,1,sqrt(10.0)),  Node(-3,2,sqrt(13.0)),  Node(-2,3,sqrt(13.0)),  Node(-1,3,sqrt(10.0))};
    std::vector<bool> valid(moves.size(), true);
-   for(int num = 0; num < moves.size(); k++)
+   for(int num = 0; num < moves.size(); num++)
        if(!CellOnGrid(i + moves[num].i, j + moves[num].j, k + moves[num].k)
        || CellIsObstacle(i + moves[num].i, j + moves[num].j, k + moves[num].k)
        || !los.checkLine(i, j, k, i + moves[num].i, j + moves[num].j, k + moves[num].k, *this))
-           valid[neig_num] = false;
+           valid[num] = false;
    std::vector<Node> v_moves = {};
-   for(int num = 0; num < valid.size(); k++)
+   for(int num = 0; num < valid.size(); num++)
        if(valid[num])
            v_moves.push_back(moves[num]);
    return v_moves;

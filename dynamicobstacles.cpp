@@ -55,15 +55,15 @@ bool DynamicObstacles::getObstacles(const char *fileName)
         {
             if(node.i < 0)
             {
-                node.i = sec->IntAttribute(CNS_TAG_ATTR_SY);
-                node.j = sec->IntAttribute(CNS_TAG_ATTR_SX);
-                node.k = sec->IntAttribute(CNS_TAG_ATTR_SZ);
+                node.i = sec->IntAttribute(CNS_TAG_ATTR_SZ);
+                node.j = sec->IntAttribute(CNS_TAG_ATTR_SY);
+                node.k = sec->IntAttribute(CNS_TAG_ATTR_SX);
                 node.g = 0;
                 obs.sections.push_back(node);
             }
-            node.i = sec->IntAttribute(CNS_TAG_ATTR_GY);
-            node.j = sec->IntAttribute(CNS_TAG_ATTR_GX);
-            node.k = sec->IntAttribute(CNS_TAG_ATTR_GZ);
+            node.i = sec->IntAttribute(CNS_TAG_ATTR_GZ);
+            node.j = sec->IntAttribute(CNS_TAG_ATTR_GY);
+            node.k = sec->IntAttribute(CNS_TAG_ATTR_GX);
             node.g += sec->DoubleAttribute(CNS_TAG_ATTR_DURATION);
             obs.sections.push_back(node);
         }

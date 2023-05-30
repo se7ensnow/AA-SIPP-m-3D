@@ -118,12 +118,14 @@ void XmlLogger::writeToLogPath(const SearchResult &sresult, const Task &task, co
         Agent agent = task.getAgent(i);
         agent_elem = doc->NewElement(CNS_TAG_AGENT);
         agent_elem->SetAttribute(CNS_TAG_ATTR_ID, agent.id.c_str());
-        agent_elem->SetAttribute(CNS_TAG_ATTR_SX, agent.start_j);
-        agent_elem->SetAttribute(CNS_TAG_ATTR_SY, agent.start_i);
+        agent_elem->SetAttribute(CNS_TAG_ATTR_SX, agent.start_k);
+        agent_elem->SetAttribute(CNS_TAG_ATTR_SY, agent.start_j);
+        agent_elem->SetAttribute(CNS_TAG_ATTR_SZ, agent.start_i);
         if(config.planforturns)
             agent_elem->SetAttribute(CNS_TAG_ATTR_SH, float(agent.start_heading));
-        agent_elem->SetAttribute(CNS_TAG_ATTR_GX, agent.goal_j);
-        agent_elem->SetAttribute(CNS_TAG_ATTR_GY, agent.goal_i);
+        agent_elem->SetAttribute(CNS_TAG_ATTR_GX, agent.goal_k);
+        agent_elem->SetAttribute(CNS_TAG_ATTR_GY, agent.goal_j);
+        agent_elem->SetAttribute(CNS_TAG_ATTR_GZ, agent.goal_i);
         if(config.planforturns)
         {
             if(agent.goal_heading < 0)
@@ -160,13 +162,15 @@ void XmlLogger::writeToLogPath(const SearchResult &sresult, const Task &task, co
             {
                 part = doc->NewElement(CNS_TAG_SECTION);
                 part->SetAttribute(CNS_TAG_ATTR_ID, partnumber);
-                part->SetAttribute(CNS_TAG_ATTR_SX, it->j);
-                part->SetAttribute(CNS_TAG_ATTR_SY, it->i);
+                part->SetAttribute(CNS_TAG_ATTR_SX, it->k);
+                part->SetAttribute(CNS_TAG_ATTR_SY, it->j);
+                part->SetAttribute(CNS_TAG_ATTR_SZ, it->i);
                 if(config.planforturns)
                     part->SetAttribute(CNS_TAG_ATTR_SH, float(it->heading));
                 iter++;
-                part->SetAttribute(CNS_TAG_ATTR_GX, iter->j);
-                part->SetAttribute(CNS_TAG_ATTR_GY, iter->i);
+                part->SetAttribute(CNS_TAG_ATTR_GX, iter->k);
+                part->SetAttribute(CNS_TAG_ATTR_GY, iter->j);
+                part->SetAttribute(CNS_TAG_ATTR_GZ, iter->i);
                 if(config.planforturns)
                     part->SetAttribute(CNS_TAG_ATTR_GH, float(iter->heading));
                 part->SetAttribute(CNS_TAG_ATTR_DURATION, float(iter->g - it->g));
@@ -188,27 +192,30 @@ void XmlLogger::writeToLogMap(const Map &map, const SearchResult &sresult)
     element->LinkEndChild(doc->NewElement(CNS_TAG_PATH));
     element = element->FirstChildElement(CNS_TAG_PATH);
     XMLElement *msg;
+    XMLElement *plane;
+    for (int i = 0; i < map.length; i++) {
+        plane = doc->NewElement(CNS_TAG_PLANE);
+        plane->SetAttribute(CNS_TAG_ATTR_NUM, i);
+        for (int j = 0; j < map.height; j++) {
+            msg = doc->NewElement(CNS_TAG_ROW);
+            msg->SetAttribute(CNS_TAG_ATTR_NUM, j);
+            text.clear();
+            std::list<Node>::const_iterator iter;
+            for (unsigned int k = 0; k < sresult.agents; k++)
+                for (iter = sresult.pathInfo[k].path.begin(); iter != sresult.pathInfo[k].path.end(); iter++)
+                    if ((*iter).i == i && (*iter).j == j)
+                        curLine[(*iter).k] = 1;
 
-    for(int i = 0; i < map.height; i++)
-    {
-        msg = doc->NewElement(CNS_TAG_ROW);
-        msg->SetAttribute(CNS_TAG_ATTR_NUM, i);
-        text.clear();
-        std::list<Node>::const_iterator iter;
-        for(unsigned int k = 0; k < sresult.agents; k++)
-            for(iter = sresult.pathInfo[k].path.begin(); iter != sresult.pathInfo[k].path.end(); iter++)
-                if((*iter).i == i)
-                    curLine[(*iter).j] = 1;
-
-        for(int j = 0; j < map.width; j++)
-            if(curLine[j] != 1)
-                text += std::to_string(map.Grid[i][j][0]) + " "; // заглушка
-            else
-            {
-                text += "* ";
-                curLine[j] = 0;
-            }
-        msg->LinkEndChild(doc->NewText(text.c_str()));
-        element->LinkEndChild(msg);
+            for (int k = 0; k < map.width; k++)
+                if (curLine[k] != 1)
+                    text += std::to_string(map.Grid[i][j][k]) + " "; // заглушка
+                else {
+                    text += "* ";
+                    curLine[k] = 0;
+                }
+            msg->LinkEndChild(doc->NewText(text.c_str()));
+            plane->LinkEndChild(msg);
+        }
+        element->LinkEndChild(plane);
     }
 }

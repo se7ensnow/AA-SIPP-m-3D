@@ -200,7 +200,7 @@ bool Config::getConfig(const char* fileName)
         stream>>connectedness;
         stream.clear();
         stream.str("");
-        if(connectedness < 2 || connectedness > 5)
+        if(connectedness < 2 || connectedness > 3)
         {
             std::cout << "Warning! Wrong value of '"<<CNS_TAG_CONNECTEDNESS<<"' element. Possible variants are 2, 3, 4 or 5 . Its value is set to '"<<CN_DEFAULT_CONNECTEDNESS<<"'."<<std::endl;
             connectedness = CN_DEFAULT_CONNECTEDNESS;

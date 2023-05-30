@@ -29,10 +29,10 @@ public:
 private:
 
     void addOpen(Node &newNode);
-    Node findMin(int size);
+    Node findMin(int size_i, int size_j);
     bool stopCriterion(const Node &curNode, Node &goalNode);
     bool testGoal(const Node &curNode, Node &goalNode);
-    double getCost(int a_i, int a_j, int b_i, int b_j);
+    double getCost(int a_i, int a_j, int a_k, int b_i, int b_j, int b_k);
     double getRCost(double headingA, double headingB);
     double calcHeading(const Node &node, const Node &son);
     std::list<Node> findSuccessors(const Node curNode, const Map &map);
@@ -44,11 +44,11 @@ private:
     bool findPath(unsigned int numOfCurAgent, const Map &map);
     std::vector<conflict> CheckConflicts(const Task &task);//bruteforce checker. It splits final(already built) trajectories into sequences of points and checks distances between them
     void setPriorities(const Task &task);
-    double getHValue(int i, int j);
+    double getHValue(int i, int j, int k);
     bool changePriorities(int bad_i);
     unsigned int openSize;
     std::list<Node> lppath;
-    std::vector<std::list<Node>> open;
+    std::vector<std::vector<std::list<Node>>> open;
     std::unordered_multimap<int, Node> close;
     std::vector<Node> hppath;
     std::vector<std::vector<int>> priorities;

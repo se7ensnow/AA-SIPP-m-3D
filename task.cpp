@@ -70,12 +70,12 @@ bool Task::getTask(const char *fileName)
     for(element; element; element = element->NextSiblingElement("agent"))
     {
         Agent agent;
-        agent.start_i = element->IntAttribute(CNS_TAG_ATTR_SY);
-        agent.start_j = element->IntAttribute(CNS_TAG_ATTR_SX);
-        agent.start_k = element->IntAttribute(CNS_TAG_ATTR_SZ);
-        agent.goal_i = element->IntAttribute(CNS_TAG_ATTR_GY);
-        agent.goal_j = element->IntAttribute(CNS_TAG_ATTR_GX);
-        agent.goal_k = element->IntAttribute(CNS_TAG_ATTR_GZ);
+        agent.start_i = element->IntAttribute(CNS_TAG_ATTR_SZ);
+        agent.start_j = element->IntAttribute(CNS_TAG_ATTR_SY);
+        agent.start_k = element->IntAttribute(CNS_TAG_ATTR_SX);
+        agent.goal_i = element->IntAttribute(CNS_TAG_ATTR_GZ);
+        agent.goal_j = element->IntAttribute(CNS_TAG_ATTR_GY);
+        agent.goal_k = element->IntAttribute(CNS_TAG_ATTR_GX);
 
         if(element->Attribute(CNS_TAG_ATTR_ID))
             agent.id = element->Attribute(CNS_TAG_ATTR_ID);
